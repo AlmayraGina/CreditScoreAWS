@@ -6,3 +6,5 @@ psutil==7.2.2
 pyarrow==20.0.0
 scikit-learn==1.7.2
 scipy==1.15.3
+boto3
+botocore
