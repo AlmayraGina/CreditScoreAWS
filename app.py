@@ -139,10 +139,8 @@ if st.button("Predict My Credit Score"):
         st.error("No AWS credentials found. Attach IAM role to EC2.")
 
     except ClientError as e:
-
-        st.error(
-            f"AWS Error: {e}"
-        )
+        st.error(f"AWS Error: {e}")
+        st.stop()
 
     st.subheader("Prediction Probability")
 
