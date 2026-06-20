@@ -162,8 +162,4 @@ if st.button("Predict My Credit Score"):
     else:
         st.success("Good Credit Score")
 
-    st.subheader("Main Factors")
-    importance_df = pd.DataFrame({"Feature": processed.columns,"Importance": model.feature_importances_})
-    importance_df = (importance_df.sort_values("Importance", ascending=False).head(10))
 
-    st.bar_chart(importance_df.set_index("Feature"))
