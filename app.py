@@ -1,14 +1,29 @@
 import streamlit as st
 import pandas as pd
-import joblib
+import json
+import os
+import boto3
+from botocore.exceptions import ClientError, NoCredentialsError
 
-#Load
+ENDPOINT_NAME = os.environ.get("ENDPOINT_NAME","CreditScore-endpoint")
+REGION = os.environ.get("AWS_REGION","us-east-1")
 
-artifact = joblib.load("artifacts/best_model.pkl")
 
-preprocessor = artifact["preprocessor"]
-model = artifact["model"]
-feature_names = artifact["feature_names"]
+@st.cache_resource
+def get_runtime_client():
+    return boto3.client("sagemaker-runtime", region_name=REGION)
+
+def invoke_endpoint(features: list[float]) -> dict:
+    runtime = get_runtime_client()
+    payload = {"instances": [features]}
+    response = runtime.invoke_endpoint(
+        EndpointName=ENDPOINT_NAME,
+        ContentType="application/json",
+        Accept="application/json",
+        Body=json.dumps(payload),
+    )
+    return json.loads(response["Body"].read().decode("utf-8"))
+
 
 credit_score_map = {
     0: "Poor",
@@ -32,7 +47,7 @@ with col1:
         "Occupation",
         ["Lawyer","Architect","Scientist","Developer","Mechanic","Engineer","Accountant","Doctor",
          "Teacher","Media_Manager","Entrepreneur","Manager","Journalist","Musician","Writer"],index=5)
-    
+
     st.markdown("### Finance")
 
     annual_income = st.slider("Annual Income",min_value=100.0,max_value=100000.0)
@@ -110,10 +125,24 @@ if st.button("Predict My Credit Score"):
         }]
     )
 
-    processed = preprocessor.transform(data)
-    processed = processed.reindex(columns=feature_names,fill_value=0)
-    prediction = model.predict(processed)[0]
-    probs = model.predict_proba(processed)[0]
+    payload = {"instances": data.to_dict(orient="records")}
+
+    try:
+
+        result = invoke_endpoint(payload)
+
+        prediction = result["prediction"]
+        probs = result["probabilities"]
+
+    except NoCredentialsError:
+
+        st.error("No AWS credentials found. Attach IAM role to EC2.")
+
+    except ClientError as e:
+
+        st.error(
+            f"AWS Error: {e}"
+        )
 
     st.subheader("Prediction Probability")
 
