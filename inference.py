@@ -33,18 +33,28 @@ def predict_fn(input_data, artifact):
 
     preprocessor = artifact["preprocessor"]
     model = artifact["model"]
+    feature_names = artifact["feature_names"]
 
-    # preprocess
     processed_data = preprocessor.transform(input_data)
 
-    # ensure exact training column order
-    processed_data = processed_data[model.feature_names_in_]
+    processed_data = pd.DataFrame(
+        processed_data,
+        columns=preprocessor.get_feature_names_out()
+    )
+
+    processed_data = processed_data.reindex(
+        columns=feature_names,
+        fill_value=0
+    )
 
     predictions = model.predict(processed_data)
 
     response = {
         "predictions": predictions.tolist(),
-        "labels": [CLASS_NAMES[int(p)] for p in predictions]
+        "labels": [
+            CLASS_NAMES[int(p)]
+            for p in predictions
+        ]
     }
 
     if hasattr(model, "predict_proba"):
@@ -52,7 +62,6 @@ def predict_fn(input_data, artifact):
         response["probabilities"] = probabilities.tolist()
 
     return response
-
 
 def output_fn(prediction, accept):
 
