@@ -131,8 +131,8 @@ if st.button("Predict My Credit Score"):
 
         result = invoke_endpoint(payload)
 
-        prediction = result["prediction"]
-        probs = result["probabilities"]
+        prediction = result["predictions"][0]
+        probs = result["probabilities"][0]
 
     except NoCredentialsError:
 
