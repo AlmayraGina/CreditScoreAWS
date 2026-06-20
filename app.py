@@ -13,15 +13,16 @@ REGION = os.environ.get("AWS_REGION","us-east-1")
 def get_runtime_client():
     return boto3.client("sagemaker-runtime", region_name=REGION)
 
-def invoke_endpoint(features: list[float]) -> dict:
+def invoke_endpoint(payload: dict) -> dict:
     runtime = get_runtime_client()
-    payload = {"instances": [features]}
+
     response = runtime.invoke_endpoint(
         EndpointName=ENDPOINT_NAME,
         ContentType="application/json",
         Accept="application/json",
         Body=json.dumps(payload),
     )
+
     return json.loads(response["Body"].read().decode("utf-8"))
 
 
